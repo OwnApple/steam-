@@ -1,0 +1,17 @@
+# Virtual Environment
+venv/
+env/
+.env
+
+# __pycache__
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Models and Large Files
+models/*.keras
+models/*.h5
+
+# OS generated files
+.DS_Store
+Thumbs.db
