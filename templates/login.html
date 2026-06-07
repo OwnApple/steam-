@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}登录 - Steam Recommender{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="steam-card p-4">
+                <h3 class="text-center mb-4 text-white">登录</h3>
+                <form action="{{ url_for('login') }}" method="POST">
+                    <div class="form-group">
+                        <label for="username" class="text-light">用户名</label>
+                        <input type="text" class="form-control bg-dark text-white border-dark" id="username" name="username" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password" class="text-light">密码</label>
+                        <input type="password" class="form-control bg-dark text-white border-dark" id="password" name="password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block mt-4" style="background-color: #66c0f4; border: none;">登录</button>
+                </form>
+                <div class="text-center mt-3">
+                    <a href="{{ url_for('register') }}" class="text-muted">没有账号？去注册</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

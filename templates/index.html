@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+
+{% block title %}首页 - Steam Recommender{% endblock %}
+
+{% block head %}
+<style>
+    /* 小红书风格瀑布流核心 CSS */
+    .waterfall-container {
+        column-count: 5;
+        column-gap: 20px;
+        padding: 20px;
+        width: 100%;
+        max-width: 1600px;
+        margin: 0 auto;
+    }
+
+    /* 响应式调整列数 */
+    @media (max-width: 1200px) { .waterfall-container { column-count: 4; } }
+    @media (max-width: 992px)  { .waterfall-container { column-count: 3; } }
+    @media (max-width: 768px)  { .waterfall-container { column-count: 2; } }
+    @media (max-width: 480px)  { .waterfall-container { column-count: 1; } }
+
+    .game-card {
+        break-inside: avoid;
+        margin-bottom: 20px;
+        border-radius: 10px;
+        overflow: hidden;
+        background-color: #2a475e;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    }
+
+    .game-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.5);
+    }
+
+    .game-cover {
+        width: 100%;
+        display: block;
+        /* 不固定高度，让图片自然撑开 */
+        object-fit: cover;
+    }
+
+    .game-info {
+        padding: 15px;
+    }
+
+    .game-title {
+        font-size: 1.1rem;
+        font-weight: bold;
+        color: #ffffff;
+        margin-bottom: 10px;
+        word-wrap: break-word; /* 防止长单词撑破卡片 */
+    }
+
+    .rating-section {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 15px;
+        border-top: 1px solid #1b2838;
+        padding-top: 15px;
+    }
+
+    .rating-select {
+        background-color: #1b2838;
+        color: #c7d5e0;
+        border: 1px solid #171a21;
+        border-radius: 4px;
+        padding: 5px;
+        width: 100%;
+    }
+
+    .btn-rate {
+        background-color: #66c0f4;
+        color: #fff;
+        border: none;
+        width: 100%;
+        padding: 6px;
+        border-radius: 4px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+    .btn-rate:hover {
+        background-color: #41a4e6;
+    }
+
+    .section-title {
+        margin: 30px 20px 10px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #66c0f4;
+        color: #66c0f4;
+        max-width: 1600px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+    {% if itemcf_recs %}
+    <h3 class="section-title">基于物品的协同过滤推荐 (ItemCF)</h3>
+    <div class="waterfall-container">
+        {% for game in itemcf_recs %}
+        <div class="game-card">
+            <img src="{{ url_for('static', filename='covers/' ~ game.game_id ~ '.jpg') }}" class="game-cover" alt="Cover" onerror="this.src='{{ url_for('static', filename='covers/default_cover.jpg') }}'">
+            <div class="game-info">
+                <div class="game-title">{{ game.game_name }}</div>
+                <div class="rating-section">
+                    <select class="rating-select" id="rating-{{ game.game_id }}">
+                        <option value="5.0">5 星 - 极客神作</option>
+                        <option value="4.0">4 星 - 不容错过</option>
+                        <option value="3.0">3 星 - 中规中矩</option>
+                        <option value="2.0">2 星 - 差强人意</option>
+                        <option value="1.0">1 星 - 退钱！</option>
+                    </select>
+                    <button class="btn-rate" onclick="submitRating('{{ game.game_id }}')">提交评价</button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if dssm_recs %}
+    <h3 class="section-title">深度语义匹配推荐 (DSSM)</h3>
+    <div class="waterfall-container">
+        {% for game in dssm_recs %}
+        <div class="game-card">
+            <img src="{{ url_for('static', filename='covers/' ~ game.game_id ~ '.jpg') }}" class="game-cover" alt="Cover" onerror="this.src='{{ url_for('static', filename='covers/default_cover.jpg') }}'">
+            <div class="game-info">
+                <div class="game-title">{{ game.game_name }}</div>
+                <div class="rating-section">
+                    <select class="rating-select" id="rating-{{ game.game_id }}">
+                        <option value="5.0">5 星 - 极客神作</option>
+                        <option value="4.0">4 星 - 不容错过</option>
+                        <option value="3.0">3 星 - 中规中矩</option>
+                        <option value="2.0">2 星 - 差强人意</option>
+                        <option value="1.0">1 星 - 退钱！</option>
+                    </select>
+                    <button class="btn-rate" onclick="submitRating('{{ game.game_id }}')">提交评价</button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div style="height: 100px;"></div> <!-- 垫高底部 -->
+
+{% endblock %}
+
+{% block scripts %}
+<!-- 引入 Toastity.js 或使用简单的 alert, 这里用浏览器 alert 或自己实现的 Toast -->
+<script>
+    function submitRating(gameId) {
+        const rating = $(`#rating-${gameId}`).val();
+        
+        $.ajax({
+            url: "{{ url_for('rate') }}",
+            type: "POST",
+            data: {
+                game_id: gameId,
+                rating: rating
+            },
+            success: function(response) {
+                if (response.success) {
+                    alert("评分提交成功！感谢您的反馈。");
+                    // 评分成功后可将按钮禁用避免重复点击
+                    $(`#rating-${gameId}`).next('button').text('已评价').prop('disabled', true).css('background-color', '#4a4a4a');
+                }
+            },
+            error: function(xhr) {
+                if (xhr.status === 401) {
+                    alert("请先登录！");
+                    window.location.href = "{{ url_for('login') }}";
+                } else {
+                    var errMsg = (xhr.responseJSON && xhr.responseJSON.error) ? xhr.responseJSON.error : "未知网络错误";
+                    alert("提交失败: " + errMsg);
+                }
+            }
+        });
+    }
+</script>
+{% endblock %}
