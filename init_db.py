@@ -4,12 +4,14 @@ from werkzeug.security import generate_password_hash
 
 # ================= 配置数据库连接 =================
 # 课件标准配置：请替换成你真实的 MySQL 密码
+import os
+
 DB_CONFIG = {
-    'host': '127.0.0.1',
-    'user': 'root',
-    'password': '123456', # 填入你的数据库密码
-    'port': 3306,
-    'database': 'steam_rec',           # 提前在 MySQL 里 CREATE DATABASE steam_rec;
+    'host': os.environ.get('DB_HOST', '127.0.0.1'),
+    'user': os.environ.get('DB_USER', 'root'),
+    'password': os.environ.get('DB_PASS', 'your_password_here'), # 填入你的数据库密码，或使用环境变量注入
+    'port': int(os.environ.get('DB_PORT', 3306)),
+    'database': 'steam_rec',
     'charset': 'utf8mb4'
 }
 

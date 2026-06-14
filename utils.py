@@ -4,11 +4,13 @@ from sklearn.metrics.pairwise import cosine_similarity
 import torch
 from models import DSSMModel
 
+import os
+
 DB_CONFIG = {
-    'host': '127.0.0.1',
-    'user': 'root',
-    'password': '123456', # 测试环境密码
-    'port': 3306,
+    'host': os.environ.get('DB_HOST', '127.0.0.1'),
+    'user': os.environ.get('DB_USER', 'root'),
+    'password': os.environ.get('DB_PASS', 'your_password_here'), # 生产环境下通过环境变量 DB_PASS 注入
+    'port': int(os.environ.get('DB_PORT', 3306)),
     'database': 'steam_rec',
     'charset': 'utf8mb4'
 }
