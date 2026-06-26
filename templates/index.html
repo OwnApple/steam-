@@ -52,6 +52,11 @@
         color: #ffffff;
         margin-bottom: 10px;
         word-wrap: break-word; /* 防止长单词撑破卡片 */
+        transition: color 0.2s ease;
+    }
+
+    a:hover .game-title {
+        color: #66c0f4;
     }
 
     .rating-section {
@@ -107,9 +112,13 @@
     <div class="waterfall-container">
         {% for game in itemcf_recs %}
         <div class="game-card">
-            <img src="{{ url_for('static', filename='covers/' ~ game.game_id ~ '.jpg') }}" class="game-cover" alt="Cover" onerror="this.src='{{ url_for('static', filename='covers/default_cover.jpg') }}'">
+            <a href="https://store.steampowered.com/search/?term={{ game.game_name }}" target="_blank">
+                <img src="{{ url_for('static', filename='covers/' ~ game.game_id ~ '.jpg') }}" class="game-cover" alt="Cover" onerror="this.src='{{ url_for('static', filename='covers/default_cover.jpg') }}'">
+            </a>
             <div class="game-info">
-                <div class="game-title">{{ game.game_name }}</div>
+                <a href="https://store.steampowered.com/search/?term={{ game.game_name }}" target="_blank" style="text-decoration: none;">
+                    <div class="game-title">{{ game.game_name }}</div>
+                </a>
                 <div class="rating-section">
                     <select class="rating-select" id="rating-{{ game.game_id }}">
                         <option value="5.0">5 星 - 极客神作</option>
@@ -131,9 +140,13 @@
     <div class="waterfall-container">
         {% for game in dssm_recs %}
         <div class="game-card">
-            <img src="{{ url_for('static', filename='covers/' ~ game.game_id ~ '.jpg') }}" class="game-cover" alt="Cover" onerror="this.src='{{ url_for('static', filename='covers/default_cover.jpg') }}'">
+            <a href="https://store.steampowered.com/search/?term={{ game.game_name }}" target="_blank">
+                <img src="{{ url_for('static', filename='covers/' ~ game.game_id ~ '.jpg') }}" class="game-cover" alt="Cover" onerror="this.src='{{ url_for('static', filename='covers/default_cover.jpg') }}'">
+            </a>
             <div class="game-info">
-                <div class="game-title">{{ game.game_name }}</div>
+                <a href="https://store.steampowered.com/search/?term={{ game.game_name }}" target="_blank" style="text-decoration: none;">
+                    <div class="game-title">{{ game.game_name }}</div>
+                </a>
                 <div class="rating-section">
                     <select class="rating-select" id="rating-{{ game.game_id }}">
                         <option value="5.0">5 星 - 极客神作</option>

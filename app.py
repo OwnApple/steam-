@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, session, redirect, url_for, g, jsonify
+from flask import Flask, render_template, request, session, redirect, url_for, g, jsonify, flash
 from werkzeug.security import generate_password_hash, check_password_hash
 import pymysql
 import os
@@ -94,6 +94,65 @@ def login():
             conn.close()
 
     return render_template('login.html')
+
+@app.route('/profile', methods=['GET', 'POST'])
+def profile():
+    if g.user is None:
+        return redirect(url_for('login'))
+        
+    conn = get_db()
+    
+    if request.method == 'POST':
+        new_password = request.form.get('new_password')
+        if new_password:
+            hashed_password = generate_password_hash(new_password)
+            try:
+                with conn.cursor() as cursor:
+                    cursor.execute('UPDATE users SET password = %s WHERE user_id = %s', (hashed_password, g.user['user_id']))
+                conn.commit()
+                flash('密码修改成功！', 'success')
+            except Exception as e:
+                conn.rollback()
+                flash(f'密码修改失败: {str(e)}', 'error')
+        else:
+            flash('请输入新密码', 'warning')
+            
+    # 获取历史评分记录
+    history_records = []
+    chart_data = {
+        'game_names': [],
+        'ratings': [],
+        'playtimes': []
+    }
+    try:
+        with conn.cursor() as cursor:
+            # 联表查询，获取该用户评分过的游戏信息 (注：表里只有 playtime, 没有 created_at)
+            query = '''
+                SELECT r.rating, r.playtime, g.game_name, g.game_id
+                FROM ratings r 
+                JOIN games g ON r.game_id = g.game_id 
+                WHERE r.user_id = %s 
+            '''
+            cursor.execute(query, (g.user['user_id'],))
+            history_records = cursor.fetchall()
+            
+            # 历史记录按评分降序排列展示
+            history_records = sorted(history_records, key=lambda x: x['rating'], reverse=True)
+            
+            # 图表数据：取游玩时长最长（或评分最高）的前10个游戏进行可视化
+            top_games_for_chart = sorted(history_records, key=lambda x: (x['playtime'] or 0), reverse=True)[:10]
+            
+            for row in top_games_for_chart:
+                chart_data['game_names'].append(row['game_name'][:12] + '...' if len(row['game_name'])>12 else row['game_name'])
+                chart_data['ratings'].append(row['rating'])
+                chart_data['playtimes'].append(row['playtime'] or 0)
+                
+    except Exception as e:
+        print(f"Fetch History Error: {e}")
+    finally:
+        conn.close()
+        
+    return render_template('profile.html', history=history_records, chart_data=chart_data)
 
 @app.route('/logout')
 def logout():

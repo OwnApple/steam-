@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+{% block title %}个人中心 - Steam 推荐系统{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <h2 class="mb-4">个人中心</h2>
+        
+        <!-- Flash messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category if category != 'error' else 'danger' }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+                </button>
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+        
+        <!-- 用户信息修改区 -->
+        <div class="card steam-card mb-5 text-white">
+            <div class="card-header bg-dark font-weight-bold">修改密码</div>
+            <div class="card-body">
+                <form action="{{ url_for('profile') }}" method="POST">
+                    <div class="form-group">
+                        <label for="new_password">新密码</label>
+                        <input type="password" class="form-control" id="new_password" name="new_password" required placeholder="请输入新密码">
+                    </div>
+                    <button type="submit" class="btn btn-primary">更新密码</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- 用户游戏画像图表区 -->
+        {% if chart_data and chart_data.game_names %}
+        <div class="card steam-card mb-5 text-white">
+            <div class="card-header bg-dark font-weight-bold">🎮 我的游戏画像分析</div>
+            <div class="card-body">
+                <!-- ECharts 图表容器 -->
+                <div id="playtimeChart" style="width: 100%; height: 350px;"></div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- 历史评分记录区 -->
+        <div class="card steam-card text-white">
+            <div class="card-header bg-dark font-weight-bold">历史评分记录</div>
+            <div class="card-body p-0">
+                {% if history %}
+                <table class="table table-hover table-dark mb-0">
+                    <thead>
+                        <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">游戏名称</th>
+                            <th scope="col">您的评分</th>
+                            <th scope="col">游玩时长</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in history %}
+                        <tr>
+                            <th scope="row">{{ loop.index }}</th>
+                            <td>
+                                <a href="https://store.steampowered.com/search/?term={{ record.game_name }}" target="_blank" class="text-info" style="text-decoration: none;">
+                                    {{ record.game_name }}
+                                </a>
+                            </td>
+                            <td class="text-warning">★ {{ record.rating }}</td>
+                            <td>{{ record.playtime if record.playtime else 0 }} 小时</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="p-4 text-center">
+                    <p class="text-muted mb-0">您还没有对任何游戏进行过评分。</p>
+                    <a href="{{ url_for('index') }}" class="btn btn-outline-info mt-3">去探索游戏</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- 引入 ECharts 库 -->
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+
+<script>
+    {% if chart_data and chart_data.game_names %}
+    document.addEventListener('DOMContentLoaded', function () {
+        // 解析来自后端的图表数据
+        var chartData = {{ chart_data | tojson | safe }};
+        
+        // 初始化 ECharts 实例
+        var myChart = echarts.init(document.getElementById('playtimeChart'), 'dark');
+        
+        // 图表配置项
+        var option = {
+            backgroundColor: 'transparent',
+            tooltip: {
+                trigger: 'axis',
+                axisPointer: { type: 'shadow' }
+            },
+            legend: {
+                data: ['游玩时长 (小时)', '评分 (星)'],
+                textStyle: { color: '#c7d5e0' }
+            },
+            grid: {
+                left: '3%',
+                right: '4%',
+                bottom: '3%',
+                containLabel: true
+            },
+            xAxis: {
+                type: 'value',
+                name: '时长/评分',
+                splitLine: { lineStyle: { color: 'rgba(255,255,255,0.1)' } },
+                axisLabel: { color: '#8f98a0' }
+            },
+            yAxis: {
+                type: 'category',
+                data: chartData.game_names,
+                axisLabel: { color: '#c7d5e0' }
+            },
+            series: [
+                {
+                    name: '游玩时长 (小时)',
+                    type: 'bar',
+                    data: chartData.playtimes,
+                    itemStyle: {
+                        color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+                            { offset: 0, color: '#2a475e' },
+                            { offset: 1, color: '#66c0f4' }
+                        ])
+                    }
+                },
+                {
+                    name: '评分 (星)',
+                    type: 'bar',
+                    data: chartData.ratings,
+                    itemStyle: { color: '#e6a23c' }
+                }
+            ]
+        };
+
+        // 渲染图表
+        myChart.setOption(option);
+        
+        // 随窗口大小改变自适应
+        window.addEventListener('resize', function() {
+            myChart.resize();
+        });
+    });
+    {% endif %}
+</script>
+{% endblock %}
